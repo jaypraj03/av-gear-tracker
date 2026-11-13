@@ -1,0 +1,41 @@
+# CI pipeline: runs on every push and every pull request.
+# If any step fails, GitHub shows a red X and the PR should not be merged.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    name: Lint, type-check and build
+    runs-on: ubuntu-latest # a fresh Linux machine GitHub starts for each run
+
+    steps:
+      # 1. Download the repo's code onto the machine
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      # 2. Install Node 26 and cache npm downloads to speed up later runs
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 26
+          cache: npm
+
+      # 3. Install exact versions from package-lock.json
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Check code style and common mistakes
+      - name: Lint
+        run: npm run lint
+
+      # 5. Check TypeScript types in the API
+      - name: Type-check API
+        run: npm run typecheck --workspace apps/api
+
+      # 6. Build both apps (the web build also type-checks the frontend)
+      - name: Build
+        run: npm run build
