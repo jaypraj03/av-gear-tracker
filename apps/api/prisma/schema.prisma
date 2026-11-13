@@ -76,7 +76,6 @@ model Person {
 model Checkout {
   id           Int      @id @default(autoincrement())
   personId     Int      @map("person_id")
-  eventName    String?  @map("event_name")
   checkedOutAt DateTime @default(now()) @map("checked_out_at")
 
   person Person         @relation(fields: [personId], references: [id])
