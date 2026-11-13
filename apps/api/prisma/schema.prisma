@@ -1,0 +1,102 @@
+// Database schema for AV Gear Tracker.
+// Each `model` becomes a table in Postgres. Prisma uses this file to create
+// the tables (migrations) and to generate typed code for querying them.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Enums: columns that only allow a fixed set of values ----------
+
+enum Ownership {
+  RENTAL
+  MANDIR
+  PERSONAL
+}
+
+enum ItemType {
+  SONY_BODY
+  SONY_LENS
+  SONY_BATTERY
+  CANON_BODY
+  CANON_LENS
+  CANON_BATTERY
+  SD_CARD
+  OTHER
+}
+
+enum ItemStatus {
+  IN
+  OUT
+  RETIRED
+}
+
+enum Team {
+  VIDEO
+  PHOTO
+}
+
+// ---------- Tables ----------
+
+// A piece of gear. `id` is the label ID printed on the item (e.g. "R-A-22").
+model Item {
+  id        String     @id
+  name      String
+  ownership Ownership
+  type      ItemType
+  status    ItemStatus @default(IN)
+  notes     String?
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  checkoutItems CheckoutItem[]
+
+  @@map("items")
+}
+
+// A team member who can borrow gear. No login needed.
+model Person {
+  id        Int      @id @default(autoincrement())
+  name      String
+  team      Team
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  checkouts Checkout[]
+
+  @@map("people")
+}
+
+// One "cart confirm": a person takes one or more items at once.
+model Checkout {
+  id           Int      @id @default(autoincrement())
+  personId     Int      @map("person_id")
+  eventName    String?  @map("event_name")
+  checkedOutAt DateTime @default(now()) @map("checked_out_at")
+
+  person Person         @relation(fields: [personId], references: [id])
+  items  CheckoutItem[]
+
+  @@index([personId])
+  @@map("checkouts")
+}
+
+// Join table: which items were in which checkout, and when each came back.
+// returnedAt = null means the item is still out.
+model CheckoutItem {
+  checkoutId Int       @map("checkout_id")
+  itemId     String    @map("item_id")
+  returnedAt DateTime? @map("returned_at")
+
+  checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Cascade)
+  item     Item     @relation(fields: [itemId], references: [id])
+
+  @@id([checkoutId, itemId])
+  @@index([itemId])
+  @@map("checkout_items")
+}
