@@ -1,5 +1,7 @@
-import express from 'express'
+import express, { type NextFunction, type Request, type Response } from 'express'
 import cors from 'cors'
+import { itemsRouter } from './routes/items.js'
+import { peopleRouter } from './routes/people.js'
 
 // Create the Express application.
 // It's kept separate from index.ts (which starts the server) so tests can
@@ -18,4 +20,16 @@ app.get('/api/health', (_req, res) => {
     service: 'av-gear-tracker-api',
     timestamp: new Date().toISOString(),
   })
+})
+
+// Routers group related routes. Everything in itemsRouter starts with /api/items.
+app.use('/api/items', itemsRouter)
+app.use('/api/people', peopleRouter)
+
+// Error handler: catches anything a route throws (like a database error)
+// and returns a clean JSON message instead of crashing or leaking details.
+// Express recognizes it as an error handler because it takes 4 arguments.
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  console.error(err)
+  res.status(500).json({ message: 'Something went wrong on the server' })
 })
