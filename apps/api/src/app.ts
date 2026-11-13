@@ -2,6 +2,9 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import cors from 'cors'
 import { itemsRouter } from './routes/items.js'
 import { peopleRouter } from './routes/people.js'
+import { checkoutsRouter } from './routes/checkouts.js'
+import { checkinsRouter } from './routes/checkins.js'
+import { HttpError } from './errors.js'
 
 // Create the Express application.
 // It's kept separate from index.ts (which starts the server) so tests can
@@ -25,11 +28,24 @@ app.get('/api/health', (_req, res) => {
 // Routers group related routes. Everything in itemsRouter starts with /api/items.
 app.use('/api/items', itemsRouter)
 app.use('/api/people', peopleRouter)
+app.use('/api/checkouts', checkoutsRouter)
+app.use('/api/checkins', checkinsRouter)
 
 // Error handler: catches anything a route throws (like a database error)
 // and returns a clean JSON message instead of crashing or leaking details.
 // Express recognizes it as an error handler because it takes 4 arguments.
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  // Expected errors we threw on purpose (bad input, not found, conflict)
+  if (err instanceof HttpError) {
+    res.status(err.status).json({ message: err.message, details: err.details })
+    return
+  }
+  // Malformed JSON in the request body
+  if (err instanceof SyntaxError && 'body' in err) {
+    res.status(400).json({ message: 'Request body is not valid JSON' })
+    return
+  }
+  // Anything else is a real bug or outage: log it, but don't leak details.
   console.error(err)
   res.status(500).json({ message: 'Something went wrong on the server' })
 })

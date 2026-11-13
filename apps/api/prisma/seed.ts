@@ -40,11 +40,11 @@ const people = [
 ] as const
 
 async function main() {
-  // Delete in child-to-parent order so foreign keys are never violated.
-  await prisma.checkoutItem.deleteMany()
-  await prisma.checkout.deleteMany()
-  await prisma.person.deleteMany()
-  await prisma.item.deleteMany()
+  // Empty every table and reset the auto-numbering, so people are always
+  // ids 1-6 after seeding. CASCADE also clears rows that point at these tables.
+  await prisma.$executeRawUnsafe(
+    'TRUNCATE TABLE checkout_items, checkouts, people, items RESTART IDENTITY CASCADE',
+  )
 
   await prisma.item.createMany({ data: [...items] })
   await prisma.person.createMany({ data: [...people] })
