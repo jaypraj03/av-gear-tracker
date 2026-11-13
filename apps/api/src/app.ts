@@ -4,12 +4,18 @@ import { itemsRouter } from './routes/items.js'
 import { peopleRouter } from './routes/people.js'
 import { checkoutsRouter } from './routes/checkouts.js'
 import { checkinsRouter } from './routes/checkins.js'
+import { assistantRouter } from './routes/assistant.js'
+import { demoRouter } from './routes/demo.js'
 import { HttpError } from './errors.js'
 
 // Create the Express application.
 // It's kept separate from index.ts (which starts the server) so tests can
 // import the app and send it fake requests without opening a real port.
 export const app = express()
+
+// Behind a hosting proxy (Render), trust it so req.ip is the visitor's real IP
+// (used by the rate limiter).
+app.set('trust proxy', 1)
 
 // Middleware: code that runs on every request before it reaches a route.
 app.use(cors()) // allow the React website (a different port) to call this API
@@ -30,6 +36,8 @@ app.use('/api/items', itemsRouter)
 app.use('/api/people', peopleRouter)
 app.use('/api/checkouts', checkoutsRouter)
 app.use('/api/checkins', checkinsRouter)
+app.use('/api/assistant', assistantRouter)
+app.use('/api/demo', demoRouter)
 
 // Error handler: catches anything a route throws (like a database error)
 // and returns a clean JSON message instead of crashing or leaking details.
