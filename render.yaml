@@ -1,0 +1,31 @@
+# Render Blueprint: deploys the API and the website from this repo.
+# In Render: New + > Blueprint > pick this repo. Render reads this file.
+services:
+  # Backend: Express API (free web service; sleeps after ~15 min idle)
+  - type: web
+    name: av-gear-api
+    runtime: node
+    plan: free
+    region: virginia
+    buildCommand: npm ci && npm run build --workspace apps/api && npm run db:deploy --workspace apps/api
+    startCommand: npm run start --workspace apps/api
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false # paste the Neon production connection string in the Render dashboard
+      - key: GEMINI_API_KEY
+        sync: false # optional, free: enables the AI assistant via Google Gemini
+      - key: ANTHROPIC_API_KEY
+        sync: false # optional, paid alternative: Claude
+      - key: DEMO_MODE
+        value: "true"
+
+  # Frontend: static React site
+  - type: web
+    name: av-gear-web
+    runtime: static
+    buildCommand: npm ci && npm run build --workspace apps/web
+    staticPublishPath: apps/web/dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false # the API's URL, e.g. https://av-gear-api.onrender.com

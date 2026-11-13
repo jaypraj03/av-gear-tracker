@@ -36,6 +36,10 @@ jobs:
       - name: Type-check API
         run: npm run typecheck --workspace apps/api
 
-      # 6. Build both apps (the web build also type-checks the frontend)
+      # 6. Run unit tests
+      - name: Test
+        run: npm test
+
+      # 7. Build both apps (the web build also type-checks the frontend)
       - name: Build
         run: npm run build
